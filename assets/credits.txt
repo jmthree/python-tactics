@@ -1,0 +1,9 @@
+All assets found though the internet using Google.
+I claim no ownership on any of them. The only work I put into these files
+is tweaking them to fit correctly in my game.
+
+moogle.png               | copyright SquareEnix. Found from http://www.battycave.com/gabe/moogle2.jpg
+isotiles.gif & grass.png | Found from http://pixeltemple.com/wp-content/uploads/2008/01/isotiles.gif
+knight folder            | copyright Gravity Inc. Found from http://rosprites.blogspot.com/2009/05/home-page.html
+sounds folder            | Found on freesounds.org. Under Creative Commons Sampling Plus.
+                         | Courtesy of broumbroum.
