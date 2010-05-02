@@ -102,6 +102,9 @@ class Camera(object):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
+    def stop(self):
+        self.target_x, self.target_y = self.x, self.y
+
     def look_at(self, x, y):
         " Sets up camera to focus on target x and y "
         self.target_x, self.target_y = x, y
