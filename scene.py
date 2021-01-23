@@ -15,6 +15,7 @@ from map import Map
 
 from knight import Knight, Mage
 from new_sprite import Direction
+from functools import reduce
 
 class World(object):
 
@@ -75,7 +76,7 @@ class Scene(object):
             self.exit()
 
     def __del__(self):
-        print "Deleting %s" % self
+        print(("Deleting %s" % self))
 
 
 class MainMenuScene(Scene):
@@ -126,7 +127,7 @@ class MainMenuScene(Scene):
         Label('FF:Tactics.py', font_name='Times New Roman', font_size=56,
                 x=title_x, y=title_y, batch=self.text_batch)
 
-        menu_texts = self.menu_items.keys()
+        menu_texts = list(self.menu_items.keys())
         for i, text in enumerate(menu_texts):
             text_x, text_y = real_cord(240, 300 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
@@ -156,7 +157,7 @@ class MainMenuScene(Scene):
         self.world.transition(AboutScene, previous=self)
 
     def _menu_action(self):
-        actions = self.menu_items.values()
+        actions = list(self.menu_items.values())
         actions[self.cursor_pos]()
 
     def _move_cursor(self, direction):
@@ -172,7 +173,7 @@ class GameScene(Scene):
     MAP_WIDTH = MAP_HEIGHT = 10
 
     # The modes the game scene can be in
-    NOTIFY, SELECT_MODE, ACTION_MODE, MOVE_TARGET_MODE, ATTACK_TARGET_MODE = range(5)
+    NOTIFY, SELECT_MODE, ACTION_MODE, MOVE_TARGET_MODE, ATTACK_TARGET_MODE = list(range(5))
 
     def __init__(self, world):
         super(GameScene, self).__init__(world)
@@ -275,7 +276,7 @@ class GameScene(Scene):
             direction = hue and Direction.WEST or Direction.SOUTH
             knight = Knight(knight_x, knight_y, direction)
             knight.zindex=10
-            knight.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 255
+            knight.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 0
             mage_x, mage_y = self.map.get_coordinates(7 * hue + 1, 7 * hue + 1)
             mage = Mage(mage_x, mage_y, direction)
             mage.zindex=10
@@ -317,7 +318,7 @@ class GameScene(Scene):
             self.turn_notice.x = 500 + self.camera.offset_x
             self.turn_notice.y = 560 + self.camera.offset_y
             self.turn_notice.draw()
-        for character in sorted(self._all_characters(), lambda c,d: int(d.y - c.y)):
+        for character in sorted(self._all_characters(), key=lambda c: -int(c.y)):
 #            if (selected_x, selected_y) == (character.x, character.y):
 #                character.color = 100, 100, 100
 #            else:
@@ -330,7 +331,7 @@ class GameScene(Scene):
         self.camera.focus(self.window.width, self.window.height)
 
     def _menu_action(self):
-        actions = list(reversed(self.action_menu_items.values()))
+        actions = list(reversed(list(self.action_menu_items.values())))
         actions[self.cursor_pos]()
 
     def _move_cursor(self, direction):
@@ -341,7 +342,7 @@ class GameScene(Scene):
     def _draw_action_menu(self):
         pattern = SolidColorImagePattern((0, 0, 150, 200))
         overlay_image = pattern.create_image(1000, 200)
-        overlay_image.anchor_x = overlay_image.width / 2
+        overlay_image.anchor_x = int(overlay_image.width / 2)
         overlay_image.anchor_y = overlay_image.height + 100
         overlay = Sprite(overlay_image, self.camera.x, self.camera.y)
         overlay.draw()
@@ -352,7 +353,7 @@ class GameScene(Scene):
         real_cord = lambda x,y: (x + self.camera.offset_x,
                                  y + self.camera.offset_y)
 
-        menu_texts = reversed(self.action_menu_items.keys())
+        menu_texts = reversed(list(self.action_menu_items.keys()))
         for label in self.action_menu_texts:
             label.delete()
 
@@ -446,7 +447,7 @@ class GameScene(Scene):
             attack = random.randrange(attacker.strength)
             defense = random.randrange(attacked.defense)
             hit = max(1, defense - attack)
-            print "Hit for ", hit
+            print("Hit for ", hit)
             attacker.attack_sound.play()
             attacked.current_health = attacked.current_health - hit
             if attacked.current_health <= 0:
@@ -594,15 +595,15 @@ class VictoryScene(Scene):
     def _draw_overlay(self):
         pattern = SolidColorImagePattern((0, 0, 100, 200))
         overlay_image = pattern.create_image(1000, 1000)
-        overlay_image.anchor_x = overlay_image.width / 2
-        overlay_image.anchor_y = overlay_image.height / 2
+        overlay_image.anchor_x = int(overlay_image.width / 2)
+        overlay_image.anchor_y = int(overlay_image.height / 2)
         overlay = Sprite(overlay_image, self.camera.x, self.camera.y)
         overlay.draw()
 
     def _generate_text(self):
         real_cord = lambda x,y: (x + self.camera.offset_x,
                                  y + self.camera.offset_y)
-        menu_texts = reversed(self.menu_items.keys())
+        menu_texts = reversed(list(self.menu_items.keys()))
         for i, text in enumerate(menu_texts):
             text_x, text_y = real_cord(300, 200 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
@@ -620,7 +621,7 @@ class VictoryScene(Scene):
                 x=hint_x - 150, y=hint_y + 370, batch=self.text_batch)
 
     def _menu_action(self):
-        actions = list(reversed(self.menu_items.values()))
+        actions = list(reversed(list(self.menu_items.values())))
         actions[self.cursor_pos]()
 
     def _move_cursor(self, direction):
@@ -671,8 +672,8 @@ class InGameMenuScene(Scene):
     def _draw_overlay(self):
         pattern = SolidColorImagePattern((0, 0, 0, 200))
         overlay_image = pattern.create_image(1000, 1000)
-        overlay_image.anchor_x = overlay_image.width / 2
-        overlay_image.anchor_y = overlay_image.height / 2
+        overlay_image.anchor_x = int(overlay_image.width / 2)
+        overlay_image.anchor_y = int(overlay_image.height / 2)
         overlay = Sprite(overlay_image, self.camera.x, self.camera.y)
         overlay.draw()
 
@@ -683,7 +684,7 @@ class InGameMenuScene(Scene):
         Label('Paused', font_name='Times New Roman', font_size=56,
                 x=pause_x, y=pause_y, batch=self.text_batch)
 
-        menu_texts = reversed(self.menu_items.keys())
+        menu_texts = reversed(list(self.menu_items.keys()))
         for i, text in enumerate(menu_texts):
             text_x, text_y = real_cord(400, 500 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
@@ -698,7 +699,7 @@ class InGameMenuScene(Scene):
                 x=hint_x, y=hint_y - 20, batch=self.text_batch)
 
     def _menu_action(self):
-        actions = list(reversed(self.menu_items.values()))
+        actions = list(reversed(list(self.menu_items.values())))
         actions[self.cursor_pos]()
 
     def _move_cursor(self, direction):

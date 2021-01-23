@@ -30,6 +30,7 @@ from collections import namedtuple
 from pyglet import image
 from pyglet import media
 from pyglet.sprite import Sprite
+from functools import reduce
 
 class Direction(object):
     NORTH, EAST, SOUTH, WEST = 0, 1, 2, 3
@@ -41,8 +42,8 @@ class Image(object):
 
     def __init__(self, image_file, anchor_x=0, anchor_y=0):
         self._image = image.load(image_file)
-        self._image.anchor_x = self._image.width / 2
-        self._image.anchor_y = self._image.height
+        self._image.anchor_x = int(self._image.width / 2)
+        self._image.anchor_y = int(self._image.height)
 
     @property
     def flipped_about_x(self):

@@ -17,7 +17,7 @@ glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 def main():
     # Create the main window
     window = Window(800, 600, visible=False,
-                   caption="FF:Tactics.py", style='dialog')
+                    caption="FF:Tactics.py", style='dialog')
     # Create the default camera and have it always updating
     camera = Camera((-600, -300, 1400, 600), (400, 300), 300, speed=PEPPY)
     clock.schedule(camera.update)
@@ -27,8 +27,8 @@ def main():
     world.transition(MainMenuScene)
 
     # centre the window on whichever screen it is currently on
-    window.set_location(window.screen.width/2 - window.width/2,
-                        window.screen.height/2 - window.height/2)
+    window.set_location(int(window.screen.width/2 - window.width/2),
+                        int(window.screen.height/2 - window.height/2))
     # clear and flip the window
     # otherwise we see junk in the buffer before the first frame
     window.clear()

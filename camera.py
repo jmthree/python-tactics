@@ -5,7 +5,7 @@ and orientation on screen
 
 Based on code from: http://tartley.com/files/stretching_pyglets_wings/
 """
-from __future__ import division
+
 from math import sin, cos, pi
 
 from pyglet.gl import (

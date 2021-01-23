@@ -56,7 +56,7 @@ class IsometricSprite(PixelAwareSprite):
        west \/ south
     """
 
-    NORTH, EAST, SOUTH, WEST = range(4)
+    NORTH, EAST, SOUTH, WEST = list(range(4))
 
     def __init__(self, x, y, faces, batch=None):
         self.faces  = faces
