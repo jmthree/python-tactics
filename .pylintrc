@@ -1,0 +1,19 @@
+[MASTER]
+  disable=missing-class-docstring,
+          missing-function-docstring,
+          missing-module-docstring
+
+[DESIGN]:
+  max-args=8
+  max-attributes=15
+
+[FORMAT]
+  good-names=x,
+             y,
+             z,
+             i,
+             j,
+             dx,
+             dy
+
+  max-line-length=120

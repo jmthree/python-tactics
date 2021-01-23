@@ -3,7 +3,7 @@ from pyglet.sprite import Sprite
 class PixelAwareSprite(Sprite):
     def __init__(self, image, x, y, batch=None, centery=False):
         self.centery = centery
-        super(PixelAwareSprite, self).__init__(image, x, y, batch=batch)
+        super().__init__(image, x, y, batch=batch)
 
     @property
     def half_width(self):
@@ -22,26 +22,26 @@ class PixelAwareSprite(Sprite):
         self._zindex = z
 
     def contains(self, x, y):
-        x1, x2 = self.x - self.half_width, self.x + self.half_width
+        left_bound, right_bound = self.x - self.half_width, self.x + self.half_width
         if not self.centery:
-            y1, y2 = self.y, self.y + self.height
+            bottom_bound, top_bound = self.y, self.y + self.height
         else:
-            y1, y2 = self.y - self.half_height, self.y + self.half_height
-        in_x = x1 <= x <= x2
-        in_y = y1 <= y <= y2
+            bottom_bound, top_bound = self.y - self.half_height, self.y + self.half_height
+        in_x = left_bound <= x <= right_bound
+        in_y = bottom_bound <= y <= top_bound
         return in_x and in_y and self._check_alpha(x, y)
 
     def _check_alpha(self, x, y):
         reverse = hasattr(self.image, "requires_reverse")
         if not reverse:
-            px = (x - self.x + self.half_width) / self.scale
+            relative_x = (x - self.x + self.half_width) / self.scale
         else:
-            px = (self.x + self.half_width - x) / self.scale
+            relative_x = (self.x + self.half_width - x) / self.scale
         if self.centery:
-            py = (y - self.y + self.half_height) / self.scale
+            relative_y = (y - self.y + self.half_height) / self.scale
         else:
-            py = (y - self.y) / self.scale
-        pixel = self.image.get_region(px, py, 1, 1)
+            relative_y = (y - self.y) / self.scale
+        pixel = self.image.get_region(relative_x, relative_y, 1, 1)
         raw = pixel.get_image_data()
         alpha = raw.get_data("A", raw.width)
         return alpha != "\0"
@@ -51,7 +51,7 @@ class PixelAwareSprite(Sprite):
     __repr__ = __str__
 
 class IsometricSprite(PixelAwareSprite):
-    """
+    r"""
       north /\ east
        west \/ south
     """
@@ -61,16 +61,15 @@ class IsometricSprite(PixelAwareSprite):
     def __init__(self, x, y, faces, batch=None):
         self.faces  = faces
         self.facing = IsometricSprite.EAST
-        super(IsometricSprite, self).__init__(
+        super().__init__(
                 self.faces[self.facing], x, y, batch=batch)
 
     def look(self, direction):
         self.facing = direction
         self.image = self.faces[direction]
 
-    def update(self, dt):
+    def tick(self, time_delta):
         " Nothing to update here "
-        pass
 
     def __str__(self):
         return "<IsometricSprite x:%s, y:%s>" % (self.x, self.y)
@@ -80,10 +79,11 @@ class MovingSprite(IsometricSprite):
     " Isometric sprite that actually moves around "
 
     def __init__(self, x, y, faces, movements, batch=None):
+        super().__init__(x, y, faces, batch=batch)
         self.movement_queue = []
         self.movement_ticks = 0
         self.movement_animations = movements
-        super(MovingSprite, self).__init__(x, y, faces, batch=batch)
+        self.last_stop = x,y
 
     def move_to(self, x, y, duration=1):
         self.movement_queue.append((x, y, duration))
@@ -92,30 +92,27 @@ class MovingSprite(IsometricSprite):
         self.facing = direction
         self.image = self.movement_animations[direction]
 
-    def update(self, dt):
+    def tick(self, time_delta):
         if self.movement_queue:
-            if self.movement_ticks == 0:
-                self.last_stop = self.x, self.y
-            ex, ey, time = self.movement_queue[0]
-            sx, sy = self.last_stop
-            if ex < sx and ey < sy:
-                self.animate_moving(IsometricSprite.WEST)
-            elif ex < sx:
-                self.animate_moving(IsometricSprite.NORTH)
-            elif ey < sy:
-                self.animate_moving(IsometricSprite.SOUTH)
+            dest_x, dest_y, time = self.movement_queue[0]
+            last_x, last_y = self.last_stop
+            if dest_x < last_x and dest_y < last_y:
+                self.look(IsometricSprite.WEST)
+            elif dest_x < last_x:
+                self.look(IsometricSprite.NORTH)
+            elif dest_y < last_y:
+                self.look(IsometricSprite.SOUTH)
             else:
-                self.animate_moving(IsometricSprite.EAST)
-            self.movement_ticks += dt
-            ex, ey, time = self.movement_queue[0]
-            sx, sy = self.last_stop
-            self.x += (ex - sx) * (dt / time)
-            self.y += (ey - sy) * (dt / time)
+                self.look(IsometricSprite.EAST)
+            self.movement_ticks += time_delta
+            self.x += (dest_x - last_x) * (time_delta / time)
+            self.y += (dest_y - last_y) * (time_delta / time)
 
             if self.movement_ticks >= time:
-                self.x, self.y = int(ex), int(ey)
+                self.x, self.y = int(dest_x), int(dest_y)
                 del self.movement_queue[0]
                 self.movement_ticks = 0
+                self.last_stop = self.x, self.y
         else:
             self.look(self.facing)
 

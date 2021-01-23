@@ -1,23 +1,23 @@
 import random
+from functools import reduce
 
 import pyglet
 from pyglet import clock
-from pyglet.sprite import Sprite
-from pyglet.image import SolidColorImagePattern
 from pyglet.graphics import Batch
-from pyglet.window import key
+from pyglet.image import SolidColorImagePattern
+from pyglet.sprite import Sprite
 from pyglet.text import Label
-
-from util import load_sprite_asset, load_sprite_animation,\
-                 faces_from_images, find_path
-from sprite import PixelAwareSprite, MovingSprite
-from map import Map
+from pyglet.window import key
 
 from knight import Knight, Mage
+from map import Map
 from new_sprite import Direction
-from functools import reduce
+from sprite import MovingSprite, PixelAwareSprite
+from util import (faces_from_images, find_path, load_sprite_animation,
+                  load_sprite_asset)
 
-class World(object):
+
+class World:
 
     def __init__(self, window, camera):
         self.window = window
@@ -37,7 +37,7 @@ class World(object):
         self.current = scene
         scene.load(self.window)
 
-class Scene(object):
+class Scene:
 
     WINDOW_EVENTS = ["on_draw", "on_mouse_press", "on_mouse_release",
                      "on_mouse_drag", "on_key_press"]
@@ -53,6 +53,12 @@ class Scene(object):
     def window(self):
         return self.world.window
 
+    def enter(self):
+        pass
+
+    def exit(self):
+        pass
+
     def load(self, window):
         """ For each window event, if this Scene has a handler, attach that
             handler to the window
@@ -63,8 +69,7 @@ class Scene(object):
                 window.__setattr__(event, self.__getattribute__(event))
 
         # Call enter to set up the scene if needed
-        if hasattr(self, "enter"):
-            self.enter()
+        self.enter()
 
     def unload(self, window):
         # Cleans out any old callbacks
@@ -72,8 +77,7 @@ class Scene(object):
             window.__setattr__(event, lambda *args: False)
 
         # Call exit to do whatever if needed
-        if hasattr(self, "exit"):
-            self.exit()
+        self.exit()
 
     def __del__(self):
         print(("Deleting %s" % self))
@@ -82,7 +86,7 @@ class Scene(object):
 class MainMenuScene(Scene):
 
     def __init__(self, world):
-        super(MainMenuScene, self).__init__(world)
+        super().__init__(world)
         self.text_batch = Batch()
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
                             x=200 + self.camera.offset_x,
@@ -116,8 +120,8 @@ class MainMenuScene(Scene):
         self.camera.focus(self.window.width, self.window.height)
 
     def on_key_press(self, button, modifiers):
-        key = (button, modifiers)
-        handler = self.key_handlers.get(key, lambda: None)
+        pressed = (button, modifiers)
+        handler = self.key_handlers.get(pressed, lambda: None)
         handler()
 
     def _generate_text(self):
@@ -165,6 +169,7 @@ class MainMenuScene(Scene):
         self.cursor.y = 300 + self.camera.offset_y - 40 * self.cursor_pos
 
 
+#pylint: disable=too-many-instance-attributes
 class GameScene(Scene):
 
     # Game map constants
@@ -176,7 +181,7 @@ class GameScene(Scene):
     NOTIFY, SELECT_MODE, ACTION_MODE, MOVE_TARGET_MODE, ATTACK_TARGET_MODE = list(range(5))
 
     def __init__(self, world):
-        super(GameScene, self).__init__(world)
+        super().__init__(world)
 
         self.map_batch  = Batch()
         self.map        = self._generate_map()
@@ -189,6 +194,7 @@ class GameScene(Scene):
         self.selected   = 0, 0
         self.selected_character = None
         self.mode = GameScene.SELECT_MODE
+        self.turn_notice = None
 
         # Items for action menu
         self.text_batch = Batch()
@@ -249,8 +255,7 @@ class GameScene(Scene):
     def _other_characters(self):
         if self.current_turn:
             return self.players[0]
-        else:
-            return self.players[1]
+        return self.players[1]
 
     def change_player(self):
         old_turn = self.current_turn
@@ -261,7 +266,7 @@ class GameScene(Scene):
             self.display_turn_notice(self.current_turn)
 
     def display_turn_notice(self, current_turn):
-        if hasattr(self, 'turn_notice'):
+        if self.turn_notice is not None:
             self.turn_notice.delete()
         self.turn_notice = Label(
                 "Player %s's Turn" % (current_turn + 1),
@@ -273,7 +278,7 @@ class GameScene(Scene):
     def _initialize_teams(self):
         def load_knight(hue):
             knight_x, knight_y = self.map.get_coordinates(9 * hue, 9 * hue)
-            direction = hue and Direction.WEST or Direction.SOUTH
+            direction = Direction.WEST if hue else Direction.SOUTH
             knight = Knight(knight_x, knight_y, direction)
             knight.zindex=10
             knight.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 0
@@ -458,8 +463,8 @@ class GameScene(Scene):
             self._close_action_menu()
 
     def on_key_press(self, button, modifiers):
-        key = (button, modifiers)
-        handler = self.key_handlers[self.mode].get(key, lambda: None)
+        pressed = (button, modifiers)
+        handler = self.key_handlers[self.mode].get(pressed, lambda: None)
         handler()
 
     def _generate_map(self):
@@ -473,7 +478,7 @@ class GameScene(Scene):
                             for i in range(rows)]
                             for x, y in column_starts]
 
-        map = Map(columns, rows)
+        gamemap = Map(columns, rows)
         for i, column in enumerate(map_points):
             for j, (x, y) in enumerate(column):
                 image = load_sprite_asset("grass")
@@ -483,8 +488,8 @@ class GameScene(Scene):
                             batch=self.map_batch, centery=True)
                 sprite.scale = 1
                 sprite.zindex = 0
-                map.add_sprite(i, j, sprite)
-        return map
+                gamemap.add_sprite(i, j, sprite)
+        return gamemap
 
     def _load_characters(self):
         # Just load the knight for now
@@ -518,11 +523,10 @@ class GameScene(Scene):
             return []
         if length == 0:
             return [(column, row)]
-        else:
-            return self._points_in_range(column - 1, row, length - 1) +\
-                   [(column, min(max(0, row - length + i), self.MAP_WIDTH - 1))
-                        for i in range(2 * length + 1)] + \
-                   self._points_in_range(column + 1, row, length - 1)
+        return self._points_in_range(column - 1, row, length - 1) +\
+                [(column, min(max(0, row - length + i), self.MAP_WIDTH - 1))
+                    for i in range(2 * length + 1)] + \
+                self._points_in_range(column + 1, row, length - 1)
 
     def _schedule_movement(self, sprite, pos):
         end_x, end_y = pos
@@ -530,9 +534,9 @@ class GameScene(Scene):
         for x, y in path:
             sprite.move_to(x, y, 0.3)
 
-    def _update_characters(self, dt):
+    def _update_characters(self, delta):
         for character in self._all_characters():
-            character.update(dt)
+            character.tick(delta)
 
     def _close_action_menu(self):
         self.selected_character = None
@@ -562,7 +566,7 @@ class GameScene(Scene):
 class VictoryScene(Scene):
 
     def __init__(self, world, winner):
-        super(VictoryScene, self).__init__(world)
+        super().__init__(world)
         self.winner = winner
         self.text_batch = Batch()
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
@@ -588,8 +592,8 @@ class VictoryScene(Scene):
         self.text_batch.draw()
 
     def on_key_press(self, button, modifiers):
-        key = (button, modifiers)
-        handler = self.key_handlers.get(key, lambda: None)
+        pressed = (button, modifiers)
+        handler = self.key_handlers.get(pressed, lambda: None)
         handler()
 
     def _draw_overlay(self):
@@ -634,7 +638,7 @@ class VictoryScene(Scene):
 class InGameMenuScene(Scene):
 
     def __init__(self, world, previous):
-        super(InGameMenuScene, self).__init__(world)
+        super().__init__(world)
         self.text_batch = Batch()
         self.old_scene = previous
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
@@ -665,8 +669,8 @@ class InGameMenuScene(Scene):
         self.text_batch.draw()
 
     def on_key_press(self, button, modifiers):
-        key = (button, modifiers)
-        handler = self.key_handlers.get(key, lambda: None)
+        pressed = (button, modifiers)
+        handler = self.key_handlers.get(pressed, lambda: None)
         handler()
 
     def _draw_overlay(self):
@@ -718,7 +722,7 @@ class InGameMenuScene(Scene):
 class AboutScene(Scene):
 
     def __init__(self, world, previous):
-        super(AboutScene, self).__init__(world)
+        super().__init__(world)
         self.old_scene = previous
         self.text_batch = Batch()
         self._generate_text()
@@ -733,8 +737,8 @@ class AboutScene(Scene):
         self.text_batch.draw()
 
     def on_key_press(self, button, modifiers):
-        key = (button, modifiers)
-        handler = self.key_handlers.get(key, lambda: None)
+        pressed = (button, modifiers)
+        handler = self.key_handlers.get(pressed, lambda: None)
         handler()
 
     def _resume(self):

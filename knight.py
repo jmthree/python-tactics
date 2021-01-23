@@ -1,5 +1,6 @@
-from new_sprite import Direction, Frame, Animation, \
-        Character, Environment, Image, SoundClip
+from new_sprite import (Animation, Character, Direction, Environment, Frame,
+                        Image, sound_clip)
+
 
 class Knight(Character):
 
@@ -11,7 +12,7 @@ class Knight(Character):
     magic    = 0
 
     profile  = Image("assets/knight/face.png")
-    attack_sound = SoundClip("assets/sound/50557__broumbroum__sf3_sfx_menu_back.wav")
+    attack_sound = sound_clip("assets/sound/50557__broumbroum__sf3_sfx_menu_back.wav")
 
     class Sprite(Character.Sprite):
 
@@ -46,7 +47,7 @@ class Mage(Character):
     magic    = 5
 
     profile  = Image("assets/mage/face.png")
-    attack_sound = SoundClip("assets/sound/50561__broumbroum__sf3_sfx_menu_select.wav")
+    attack_sound = sound_clip("assets/sound/50561__broumbroum__sf3_sfx_menu_select.wav")
 
     class Sprite(Character.Sprite):
 

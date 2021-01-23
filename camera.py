@@ -16,7 +16,7 @@ from pyglet.gl import (
 NORMAL, PEPPY, FAST = 1, 2, 3
 LEFT, RIGHT, UP, DOWN = -pi/2, pi/2, 0, pi
 
-class Camera(object):
+class Camera:
     """ Manipulates the OpenGL projection matrix to emulate a moving
         camera in the game.
     """
@@ -66,7 +66,7 @@ class Camera(object):
         self.target_x = min(max(self.min_x, possible_x), self.max_x)
         self.target_y = min(max(self.min_y, possible_y), self.max_y)
 
-    def update(self, delta_t):
+    def tick(self, delta_t):
         " Changes position of camera based on change in time "
         new_x     = self.target_x - self.x
         new_y     = self.target_y - self.y
@@ -95,6 +95,7 @@ class Camera(object):
             self.x, self.y, -1.0,
             0.0,    1.0,    0.0)
 
+    #pylint: disable=no-self-use
     def hud_mode(self, width, height):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()

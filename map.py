@@ -1,4 +1,4 @@
-class Map(object):
+class Map:
 
     def __init__(self, width, height):
         self._width, self._height = width, height
@@ -38,8 +38,7 @@ class Map(object):
         " Get the sprite at the ith column and jth row "
         if 0 <= i < self._width and 0 <= j < self._height:
             return self._sprites[i][j]
-        else:
-            return None
+        return None
 
     def find_sprite(self, x, y):
         " Get the sprite which the given x,y falls within "

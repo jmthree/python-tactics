@@ -4,11 +4,11 @@
 """
 import pyglet
 from pyglet import clock
+from pyglet.gl import (GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA,
+                       glBlendFunc, glEnable)
 from pyglet.window import Window
-from pyglet.gl import glEnable, GL_BLEND, \
-        glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 
-from camera import Camera, PEPPY
+from camera import PEPPY, Camera
 from scene import MainMenuScene, World
 
 glEnable(GL_BLEND)
@@ -20,7 +20,7 @@ def main():
                     caption="FF:Tactics.py", style='dialog')
     # Create the default camera and have it always updating
     camera = Camera((-600, -300, 1400, 600), (400, 300), 300, speed=PEPPY)
-    clock.schedule(camera.update)
+    clock.schedule(camera.tick)
 
     # Load the first scene
     world = World(window, camera)
@@ -40,4 +40,5 @@ def main():
     # finally, run the application
     pyglet.app.run()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()

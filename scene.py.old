@@ -52,7 +52,7 @@ class Scene(object):
 class MainMenuScene(Scene):
 
     def __init__(self, window, camera):
-        super(MainMenuScene, self).__init__(window, camera)
+        super().__init__(window, camera)
         self.text_batch = Batch()
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
                             x=200 + self.camera.offset_x,
@@ -144,7 +144,7 @@ class GameScene(Scene):
     MAP_WIDTH = MAP_HEIGHT = 20
 
     def __init__(self, window, camera):
-        super(GameScene, self).__init__(window, camera)
+        super().__init__(window, camera)
 
         self.map_batch  = Batch()
         self.map_points = self._generate_map()
@@ -298,14 +298,14 @@ class GameScene(Scene):
                     next, rest = self.movement_path[0], self.movement_path[1:]
                     sprite.move_to(next[0], next[1])
                     self.movement_path = rest
-            self.movement_time += dt
+            self.movement_time += time_delta 
             print self.movement_time
 
         clock.schedule(movement)
 
-    def _update_characters(self, dt):
+    def _update_characters(self, time_delta):
         for character in self.characters:
-            character.update(dt)
+            character.tick(dt)
 
     def game_menu(self):
         pause = InGameMenuScene(self.window, self.camera, self)
@@ -315,7 +315,7 @@ class GameScene(Scene):
 class InGameMenuScene(Scene):
 
     def __init__(self, window, camera, old_scene):
-        super(InGameMenuScene, self).__init__(window, camera)
+        super().__init__(window, camera)
         self.text_batch = Batch()
         self.old_scene = old_scene
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,

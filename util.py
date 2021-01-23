@@ -55,25 +55,24 @@ def find_path(map_points, start_x, start_y, end_x, end_y):
         for column_num, column in enumerate(map_points):
             if (x, y) in column:
                 return column_num, column.index((x, y))
+        return None # this will definitely break something
     dy, dx = end_y - start_y, end_x - start_x
     if not dx and not dy:
         return []
+    angle = atan2(dy, dx)
+    col, row = index_of(start_x, start_y)
+    if 0 <= angle <= pi/2:
+        # "going east"
+        next_col, next_row = col, row - 1
+    elif pi/2 < angle <= pi:
+        # "going north"
+        next_col, next_row = col - 1, row
+    elif -pi/2 <= angle <= 0:
+        # "going south"
+        next_col, next_row = col + 1, row
     else:
-        angle = atan2(dy, dx)
-        col, row = index_of(start_x, start_y)
-        if 0 <= angle <= pi/2:
-            # "going east"
-            next_col, next_row = col, row - 1
-        elif pi/2 < angle <= pi:
-            # "going north"
-            next_col, next_row = col - 1, row
-        elif -pi/2 <= angle <= 0:
-            # "going south"
-            next_col, next_row = col + 1, row
-        else:
-            # "going west"
-            next_col, next_row = col, row + 1
-        next_x, next_y = map_points[next_col][next_row]
-        return [(next_x, next_y)] +\
-               find_path(map_points, next_x, next_y, end_x, end_y)
-
+        # "going west"
+        next_col, next_row = col, row + 1
+    next_x, next_y = map_points[next_col][next_row]
+    return [(next_x, next_y)] +\
+            find_path(map_points, next_x, next_y, end_x, end_y)

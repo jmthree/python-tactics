@@ -20,27 +20,31 @@
 
 # Element
 #   * move (x, y) - Tells the element to move to the set coordinates
-#   * update (time) - Return updated sprite, with whatever moves and images changed
+#   * tick (time) - Return updated sprite, with whatever moves and images changed
 #   * @x - The x coordinate of the element
 #   * @y - The y coordinate of the element
 #   * @image - The current image the element should show
 
 from collections import namedtuple
-
-from pyglet import image
-from pyglet import media
-from pyglet.sprite import Sprite
+from enum import Enum
 from functools import reduce
 
-class Direction(object):
-    NORTH, EAST, SOUTH, WEST = 0, 1, 2, 3
+from pyglet import image, media
+from pyglet.sprite import Sprite
 
-def SoundClip(file):
+
+class Direction(Enum):
+    NORTH = 0
+    EAST = 1
+    SOUTH = 2
+    WEST = 3
+
+def sound_clip(file):
     return media.load(file, streaming=False)
 
-class Image(object):
+class Image:
 
-    def __init__(self, image_file, anchor_x=0, anchor_y=0):
+    def __init__(self, image_file):
         self._image = image.load(image_file)
         self._image.anchor_x = int(self._image.width / 2)
         self._image.anchor_y = int(self._image.height)
@@ -79,6 +83,7 @@ class Animation(namedtuple("Animation", "frames amount_played")):
             accum = accum + frame.duration
             if accum > self.amount_played:
                 return frame.image
+        return self.frames[0]
 
     @property
     def flipped_about_x(self):
@@ -87,23 +92,19 @@ class Animation(namedtuple("Animation", "frames amount_played")):
                 self.amount_played)
 
 
-    def update(self, dt):
-        return Animation(self.frames, (self.amount_played + dt) % self.duration)
+    def tick(self, time_delta):
+        return Animation(self.frames, (self.amount_played + time_delta) % self.duration)
 
 SpriteBase = namedtuple("SpriteBase", "x y")
 
-class SpriteMovement(object):
-
-    def update(self, dt):
-        pass
-
-class Character(object):
+class Character:
 
     def __init__(self, x, y, facing=Direction.NORTH):
         self.sprite = Sprite(self.Sprite.faces[facing], x, y)
         self.facing = facing
         self.movement_queue = []
         self.movement_ticks = 0
+        self.last_stop = (self.x, self.y)
 
         self.current_health = self.health
 
@@ -118,16 +119,16 @@ class Character(object):
         return self.sprite.x
 
     @x.setter
-    def x(self, nx):
-        self.sprite.x = nx
+    def x(self, x):
+        self.sprite.x = x
 
     @property
     def y(self):
         return self.sprite.y
 
     @y.setter
-    def y(self, ny):
-        self.sprite.y = ny
+    def y(self, y):
+        self.sprite.y = y
 
     @property
     def color(self):
@@ -144,30 +145,27 @@ class Character(object):
     def move_to(self, x, y, duration=1):
         self.movement_queue.append((x, y, duration))
 
-    def update(self, dt):
+    def tick(self, time_delta):
         if self.movement_queue:
-            if self.movement_ticks == 0:
-                self.last_stop = self.x, self.y
-            ex, ey, time = self.movement_queue[0]
-            sx, sy = self.last_stop
-            if ex < sx and ey < sy:
+            dest_x, dest_y, time = self.movement_queue[0]
+            last_x, last_y = self.last_stop
+            if dest_x < last_x and dest_y < last_y:
                 self.look(Direction.WEST)
-            elif ex < sx:
+            elif dest_x < last_x:
                 self.look(Direction.NORTH)
-            elif ey < sy:
+            elif dest_y < last_y:
                 self.look(Direction.SOUTH)
             else:
                 self.look(Direction.EAST)
-            self.movement_ticks += dt
-            ex, ey, time = self.movement_queue[0]
-            sx, sy = self.last_stop
-            self.x += (ex - sx) * (dt / time)
-            self.y += (ey - sy) * (dt / time)
+            self.movement_ticks += time_delta
+            self.x += (dest_x - last_x) * (time_delta / time)
+            self.y += (dest_y - last_y) * (time_delta / time)
 
             if self.movement_ticks >= time:
-                self.x, self.y = int(ex), int(ey)
+                self.x, self.y = int(dest_x), int(dest_y)
                 del self.movement_queue[0]
                 self.movement_ticks = 0
+                self.last_stop = (self.x, self.y)
         else:
             self.look(self.facing)
 
@@ -178,28 +176,32 @@ class Character(object):
 #        def image(self):
 #            return self.faces[self.facing]
 #
-#        def update(self, dt):
+#        def tick(self, time_delta):
 #            return self.__class__(self.x, self.y, self.facing, self.moving_to, self.internal_clock + dt)
 #
 #        def move(self, new_x, new_y):
-            pass
+        pass
 
-class Environment(object):
+class Environment:
+
+    def __init__(self):
+        self.occupiable = False
+        self.height = 0
 
     @property
     def can_occupy(self):
-        return hasattr(self, 'occupiable') and self.occupiable or False
+        return self.occupiable
 
     @property
     def level(self):
-        return hasattr(self, 'height') and self.height or 0
+        return self.height
 
     class Sprite(SpriteBase):
 
-        def update(self, dt):
+        def tick(self, _time_delta):
             return self
 
-        def move(self, x, y):
+        def move(self, _x, _y):
             return self
 
         @property
@@ -228,14 +230,14 @@ class Environment(object):
 #    def move(self, new_x, new_y):
 #        return self
 #
-#    def update(self, dt):
+#    def tick(self, time_delta):
 #        return self
 #
 #class TurnableSprite(Sprite):
 #
 #    def __init__(self, x, y, facing=Direction.NORTH):
 #        self.face = self.faces[facing]
-#        super(TurnableSprite, self).__init__(x, y)
+#        super().__init__(x, y)
 #
 #    def turn(self, direction):
 #        return TurnableSprite(self.x, self.y, direction)
