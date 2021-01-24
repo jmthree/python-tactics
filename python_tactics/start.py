@@ -8,13 +8,13 @@ from pyglet.gl import (GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA,
                        glBlendFunc, glEnable)
 from pyglet.window import Window
 
-from camera import PEPPY, Camera
-from scene import MainMenuScene, World
+from python_tactics.camera import PEPPY, Camera
+from python_tactics.scenes import MainMenuScene, World
 
 glEnable(GL_BLEND)
 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-def main():
+def start():
     # Create the main window
     window = Window(800, 600, visible=False,
                     caption="FF:Tactics.py", style='dialog')
@@ -39,6 +39,3 @@ def main():
 
     # finally, run the application
     pyglet.app.run()
-
-if __name__ == "__main__":
-    main()

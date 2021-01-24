@@ -9,12 +9,12 @@ from pyglet.sprite import Sprite
 from pyglet.text import Label
 from pyglet.window import key
 
-from knight import Knight, Mage
-from map import Map
-from new_sprite import Direction
-from sprite import MovingSprite, PixelAwareSprite
-from util import (faces_from_images, find_path, load_sprite_animation,
-                  load_sprite_asset)
+from python_tactics.knight import Knight, Mage
+from python_tactics.map import Map
+from python_tactics.new_sprite import Direction
+from python_tactics.sprite import MovingSprite, PixelAwareSprite
+from python_tactics.util import (faces_from_images, find_path,
+                                 load_sprite_animation, load_sprite_asset)
 
 
 class World:

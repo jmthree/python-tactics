@@ -1,5 +1,5 @@
-from new_sprite import (Animation, Character, Direction, Environment, Frame,
-                        Image, sound_clip)
+from python_tactics.new_sprite import (Animation, Character, Direction,
+                                       Environment, Frame, Image, sound_clip)
 
 
 class Knight(Character):
