@@ -125,8 +125,8 @@ class MainMenuScene(Scene):
         super().__init__(world)
         self.text_batch = Batch()
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
-                            x=200 + self.camera.offset_x,
-                            y=300 + self.camera.offset_y,
+                            x=self.camera.to_x_from_left(200),
+                            y=self.camera.to_y_from_bottom(300),
                             batch=self.text_batch)
         self.cursor_pos = 0
         self.moogle = self._load_moogle()
@@ -161,19 +161,17 @@ class MainMenuScene(Scene):
         handler()
 
     def _generate_text(self):
-        real_cord = lambda x,y: (x + self.camera.offset_x,
-                                 y + self.camera.offset_y)
-        title_x, title_y = real_cord(10, 520)
+        title_x, title_y = self.camera.to_xy_from_bottom_left(10, 520)
         Label('FF:Tactics.py', font_name='Times New Roman', font_size=56,
                 x=title_x, y=title_y, batch=self.text_batch)
 
         menu_texts = list(self.menu_items.keys())
         for i, text in enumerate(menu_texts):
-            text_x, text_y = real_cord(240, 300 - 40 * i)
+            text_x, text_y = self.camera.to_xy_from_bottom_left(240, 300 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
                     x=text_x, y=text_y, batch=self.text_batch)
 
-        hint_x, hint_y = real_cord(400, 30)
+        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
         Label("Use Up and Down Arrows to navigate",
                 font_name='Times New Roman', font_size=18,
                 x=hint_x, y=hint_y, batch=self.text_batch)
@@ -186,8 +184,8 @@ class MainMenuScene(Scene):
         moogle_image.anchor_x = int(moogle_image.width / 2)
         moogle_image.anchor_y = int(moogle_image.height / 2)
         moog_sprite = Sprite(moogle_image,
-                        40 + self.camera.offset_x,
-                        40 + self.camera.offset_y)
+                        self.camera.to_x_from_left(40),
+                        self.camera.to_y_from_bottom(40))
         return moog_sprite
 
     def _new_game(self):
@@ -202,7 +200,7 @@ class MainMenuScene(Scene):
 
     def _move_cursor(self, direction):
         self.cursor_pos = (self.cursor_pos - direction) % len(self.menu_items)
-        self.cursor.y = 300 + self.camera.offset_y - 40 * self.cursor_pos
+        self.cursor.y = self.camera.to_y_from_bottom(300 - 40 * self.cursor_pos)
 
 
 #pylint: disable=too-many-instance-attributes
@@ -236,8 +234,8 @@ class GameScene(Scene):
         self.text_batch = Batch()
         self.cursor_pos = 0
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
-                            x=10 + self.camera.offset_x,
-                            y=140 + self.camera.offset_y,
+                            x=self.camera.to_x_from_left(10),
+                            y=self.camera.to_y_from_bottom(140),
                             batch=self.text_batch)
         self.action_menu_texts = []
 
@@ -307,8 +305,8 @@ class GameScene(Scene):
         self.turn_notice = Label(
                 "Player %s's Turn" % (current_turn + 1),
                 font_name='Times New Roman', font_size=36,
-                x= 500 + self.camera.offset_x,
-                y= 560 + self.camera.offset_y)
+                x=self.camera.to_x_from_left(10),
+                y=self.camera.to_y_from_bottom(10))
         self.turn_notice.color = 255 - (100 * current_turn), 255 - (100 * ((current_turn + 1) % 2)), 255, 255
 
     def _initialize_teams(self):
@@ -356,8 +354,8 @@ class GameScene(Scene):
                 sprite.color = 255, 255, 255
         self.map_batch.draw()
         if hasattr(self, 'turn_notice'):
-            self.turn_notice.x = 500 + self.camera.offset_x
-            self.turn_notice.y = 560 + self.camera.offset_y
+            self.turn_notice.x = self.camera.to_x_from_left(10)
+            self.turn_notice.y = self.camera.to_y_from_bottom(10)
             self.turn_notice.draw()
         for character in sorted(self._all_characters(), key=lambda c: -int(c.y)):
 #            if (selected_x, selected_y) == (character.x, character.y):
@@ -370,6 +368,7 @@ class GameScene(Scene):
             self._draw_action_menu()
             self.text_batch.draw()
         self.camera.focus(self.window.width, self.window.height)
+        self.camera.draw()
 
     def _menu_action(self):
         actions = list(reversed(list(self.action_menu_items.values())))
@@ -377,8 +376,7 @@ class GameScene(Scene):
 
     def _move_cursor(self, direction):
         self.cursor_pos = (self.cursor_pos - direction) % len(self.action_menu_items)
-        self.cursor.x = 10 + self.camera.offset_x
-        self.cursor.y = 150 + self.camera.offset_y - 50 * self.cursor_pos
+        self.cursor.y = self.camera.to_y_from_bottom(150 - 50 * self.cursor_pos)
 
     def _draw_action_menu(self):
         pattern = SolidColorImagePattern((0, 0, 150, 200))
@@ -391,15 +389,12 @@ class GameScene(Scene):
         self._generate_text()
 
     def _generate_text(self):
-        real_cord = lambda x,y: (x + self.camera.offset_x,
-                                 y + self.camera.offset_y)
-
         menu_texts = reversed(list(self.action_menu_items.keys()))
         for label in self.action_menu_texts:
             label.delete()
 
         for i, text in enumerate(menu_texts):
-            text_x, text_y = real_cord(40, 150 - 50 * i)
+            text_x, text_y = self.camera.to_xy_from_bottom_left(40, 150 - 50 * i)
             self.action_menu_texts.append(
                     Label(text, font_name='Times New Roman', font_size=36,
                         x=text_x, y=text_y, batch=self.text_batch))
@@ -570,8 +565,8 @@ class GameScene(Scene):
             self.attack_hilight = []
             self.camera.stop()
             self.cursor_pos = 0
-            self.cursor.x = 10 + self.camera.offset_x
-            self.cursor.y = 150 + self.camera.offset_y
+            self.cursor.x = self.camera.to_x_from_left(10)
+            self.cursor.y = self.camera.to_y_from_bottom(150)
             self.mode = GameScene.ACTION_MODE
             self.selected = self.map.get_row_column(self.selected_character.x, self.selected_character.y)
 
@@ -622,15 +617,13 @@ class VictoryScene(Scene):
         overlay.draw()
 
     def _generate_text(self):
-        real_cord = lambda x,y: (x + self.camera.offset_x,
-                                 y + self.camera.offset_y)
         menu_texts = reversed(list(self.menu_items.keys()))
         for i, text in enumerate(menu_texts):
-            text_x, text_y = real_cord(300, 200 - 40 * i)
+            text_x, text_y = self.camera.to_xy_from_bottom_left(300, 200 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
                     x=text_x, y=text_y, batch=self.text_batch)
 
-        hint_x, hint_y = real_cord(400, 30)
+        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
         Label("Use Up and Down Arrows to navigate",
                 font_name='Times New Roman', font_size=18,
                 x=hint_x, y=hint_y, batch=self.text_batch)
@@ -659,8 +652,8 @@ class InGameMenuScene(Scene):
         self.text_batch = Batch()
         self.old_scene = previous
         self.cursor = Label(">", font_name='Times New Roman', font_size=36,
-                            x=360 + self.camera.offset_x,
-                            y=500 + self.camera.offset_y,
+                            x=self.camera.to_x_from_left(360),
+                            y=self.camera.to_y_from_bottom(500),
                             batch=self.text_batch)
         self.cursor_pos = 0
 
@@ -692,26 +685,24 @@ class InGameMenuScene(Scene):
 
     def _draw_overlay(self):
         pattern = SolidColorImagePattern((0, 0, 0, 200))
-        overlay_image = pattern.create_image(1000, 1000)
+        overlay_image = pattern.create_image(self.world.window.width + 200, self.world.window.height + 200)
         overlay_image.anchor_x = int(overlay_image.width / 2)
         overlay_image.anchor_y = int(overlay_image.height / 2)
         overlay = Sprite(overlay_image, self.camera.x, self.camera.y)
         overlay.draw()
 
     def _generate_text(self):
-        real_cord = lambda x,y: (x + self.camera.offset_x,
-                                 y + self.camera.offset_y)
-        pause_x, pause_y = real_cord(10, 10)
+        pause_x, pause_y = self.camera.to_xy_from_bottom_left(10, 10)
         Label('Paused', font_name='Times New Roman', font_size=56,
                 x=pause_x, y=pause_y, batch=self.text_batch)
 
         menu_texts = reversed(list(self.menu_items.keys()))
         for i, text in enumerate(menu_texts):
-            text_x, text_y = real_cord(400, 500 - 40 * i)
+            text_x, text_y = self.camera.to_xy_from_bottom_left(400, 500 - 40 * i)
             Label(text, font_name='Times New Roman', font_size=36,
                     x=text_x, y=text_y, batch=self.text_batch)
 
-        hint_x, hint_y = real_cord(400, 30)
+        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
         Label("Use Up and Down Arrows to navigate",
                 font_name='Times New Roman', font_size=18,
                 x=hint_x, y=hint_y, batch=self.text_batch)
@@ -725,7 +716,7 @@ class InGameMenuScene(Scene):
 
     def _move_cursor(self, direction):
         self.cursor_pos = (self.cursor_pos - direction) % len(self.menu_items)
-        self.cursor.y = 500 + self.camera.offset_y - 40 * self.cursor_pos
+        self.cursor.y = self.camera.to_y_from_bottom(500 - 40 * self.cursor_pos)
 
     def _resume_game(self):
         self.world.reload(self.old_scene)
@@ -762,14 +753,12 @@ class AboutScene(Scene):
         self.world.reload(self.old_scene)
 
     def _generate_text(self):
-        real_cord = lambda x,y: (x + self.camera.offset_x,
-                                 y + self.camera.offset_y)
-        author_x, author_y = real_cord(200, 500)
+        author_x, author_y = self.camera.to_xy_from_bottom_left(200, 500)
         Label("Written by John Mendelewski",
                 font_name='Times New Roman', font_size=36,
                 x=author_x, y=author_y - 20, batch=self.text_batch)
 
-        hint_x, hint_y = real_cord(400, 30)
+        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
         Label("Use Escape to return to the menu",
                 font_name='Times New Roman', font_size=18,
                 x=hint_x, y=hint_y - 20, batch=self.text_batch)

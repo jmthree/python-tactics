@@ -109,3 +109,23 @@ class Camera:
     def look_at(self, x, y):
         " Sets up camera to focus on target x and y "
         self.target_x, self.target_y = x, y
+
+    def to_y_from_bottom(self, y):
+        "Returns a y that is y pixels above the bottom the window"
+        return self.y - 300 + y
+
+    def to_x_from_left(self, x):
+        "Returns a x that is x pixels right of left of the window"
+        return self.x - 400 + x
+
+    def to_xy_from_bottom_left(self, x, y):
+        "Returns a tuple of x and y that are x pixels right of and y pixels above the bottom left of the window"
+        return self.to_x_from_left(x), self.to_y_from_bottom(y)
+
+    def draw(self):
+        # Useful for visualizing where the camera currently is
+        # Want to draw a bounding box next
+        #Label("x", font_name="Times New Roman", font_size=12, x=self.x, y=self.y).draw()
+        #Label("x", font_name="Times New Roman", color=(255, 0, 0, 255), font_size=12, x=self.target_x, y=self.target_y).draw()
+        #Label("x", font_name="Times New Roman", color=(0, 0, 255, 255), font_size=12, x=self.origin_x, y=self.origin_y).draw()
+        pass

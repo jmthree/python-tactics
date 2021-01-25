@@ -16,10 +16,9 @@ def start():
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     # Create the main window
-    window = Window(800, 600, visible=False,
-                    caption="FF:Tactics.py", style='dialog')
+    window = Window(800, 600, visible=False, caption="FF:Tactics.py", style='dialog')
     # Create the default camera and have it always updating
-    camera = Camera((-600, -300, 1400, 600), (400, 300), 300, speed=PEPPY)
+    camera = Camera((-600, -300, 1400, 600), (400, 400), 300, speed=PEPPY)
     clock.schedule(camera.tick)
 
     # Load the first scene
