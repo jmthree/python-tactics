@@ -12,9 +12,8 @@ from pyglet.window import key
 from python_tactics.knight import Knight, Mage
 from python_tactics.map import Map
 from python_tactics.new_sprite import Direction
-from python_tactics.sprite import MovingSprite, PixelAwareSprite
-from python_tactics.util import (faces_from_images, find_path,
-                                 load_sprite_animation, load_sprite_asset)
+from python_tactics.sprite import PixelAwareSprite
+from python_tactics.util import (find_path, load_sprite_asset)
 
 
 class World:
@@ -81,6 +80,43 @@ class Scene:
 
     def __del__(self):
         print(("Deleting %s" % self))
+
+
+class AtlasBrowsingScene(Scene):
+
+    def __init__(self, world):
+        super().__init__(world)
+        self.dude_frame = 0
+        self.dude_sheet = self._load_dude_sheet()
+        self.dude = self._load_dude()
+        self.frame_text = self._load_frame_text()
+
+    def enter(self):
+        black = 0, 0, 0, 0
+        pyglet.gl.glClearColor(*black)
+
+    def on_draw(self):
+        self.world.window.clear()
+        self.dude.draw()
+
+
+    def _load_dude_sheet(self):
+        img = load_sprite_asset("unicorn_atlas")
+        sprite_grid = pyglet.image.ImageGrid(img, 12, 24)
+        return sprite_grid
+
+    def _load_dude(self):
+        return Sprite(self.dude_sheet[self.dude_frame])
+
+    def _load_frame_text(self):
+        return Label(f"{self.dude_frame}", font_name='Times New Roman', font_size=36, x=200, y=300)
+
+    def on_key_press(self, button, _modifiers):
+        if button in (key.LEFT, key.RIGHT):
+            modifier = 1 if button == key.LEFT else -1
+            self.dude_frame = (self.dude_frame - modifier) % 288
+            self.dude = self._load_dude()
+            self.frame_text = self._load_frame_text()
 
 
 class MainMenuScene(Scene):
@@ -277,12 +313,12 @@ class GameScene(Scene):
 
     def _initialize_teams(self):
         def load_knight(hue):
-            knight_x, knight_y = self.map.get_coordinates(9 * hue, 9 * hue)
-            direction = Direction.WEST if hue else Direction.SOUTH
+            knight_x, knight_y = self.map.get_coordinates(9 * hue, 4)
+            direction = Direction.NORTH if hue else Direction.SOUTH
             knight = Knight(knight_x, knight_y, direction)
             knight.zindex=10
             knight.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 0
-            mage_x, mage_y = self.map.get_coordinates(7 * hue + 1, 7 * hue + 1)
+            mage_x, mage_y = self.map.get_coordinates(9 * hue, 5)
             mage = Mage(mage_x, mage_y, direction)
             mage.zindex=10
             mage.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 255
@@ -489,34 +525,15 @@ class GameScene(Scene):
                 sprite.scale = 1
                 sprite.zindex = 0
                 gamemap.add_sprite(i, j, sprite)
+                # Uncomment to display grid numbers
+                # very useful to understand space
+                # Label(f"{i}, {j}",
+                #       font_name='Times New Roman',
+                #       font_size=12,
+                #       x=x,
+                #       y=y,
+                #       batch=self.map_batch)
         return gamemap
-
-    def _load_characters(self):
-        # Just load the knight for now
-        knight_north = load_sprite_asset("knight/look_north")
-        knight_west = load_sprite_asset("knight/look_west")
-        knight_walk_west  = load_sprite_animation("knight", "walk_west", 8, 0.15)
-        knight_walk_north = load_sprite_animation("knight", "walk_north", 8, 0.15)
-        #knight_walk_west = knight_walk_north = pyglet.image.load_animation("knight/walk_west.gif")
-#        knight_walk_west.anchor_x = knight_walk_west.width / 2
-
-        knight_x, knight_y = self.map.get_coordinates(5, 5)
-        knight_faces = faces_from_images(north=knight_north, west=knight_west)
-        knight_walks = [knight_walk_north, knight_walk_west,
-                        knight_walk_north, knight_walk_west]
-        knight = MovingSprite(knight_x, knight_y, knight_faces, knight_walks)
-        knight.scale=1
-        knight.is_player=True
-        knight.zindex=10
-
-        knight_x, knight_y = self.map.get_coordinates(5, 0)
-        knight2 = MovingSprite(knight_x, knight_y, knight_faces, knight_walks)
-        knight2.scale=1
-        knight2.is_player=True
-        knight2.zindex=10
-        knight2.look(2)
-
-        return [knight, knight2]
 
     def _points_in_range(self, column, row, length):
         if not 0 <= column < self.MAP_HEIGHT:

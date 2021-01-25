@@ -30,8 +30,7 @@ from collections import namedtuple
 from enum import Enum
 from functools import reduce
 
-import pkg_resources
-from pyglet import image, media, resource
+from pyglet import image, media
 from pyglet.sprite import Sprite
 
 from python_tactics.util import asset_to_file
