@@ -147,8 +147,8 @@ class MainMenuScene(Scene):
 
     def _load_moogle(self):
         moogle_image = load_sprite_asset("moogle")
-        moogle_image.anchor_x = moogle_image.width / 2
-        moogle_image.anchor_y = moogle_image.height / 2
+        moogle_image.anchor_x = int(moogle_image.width / 2)
+        moogle_image.anchor_y = int(moogle_image.height / 2)
         moog_sprite = Sprite(moogle_image,
                         40 + self.camera.offset_x,
                         40 + self.camera.offset_y)
@@ -479,11 +479,11 @@ class GameScene(Scene):
                             for x, y in column_starts]
 
         gamemap = Map(columns, rows)
+        image = load_sprite_asset("grass")
+        image.anchor_x = int(image.width / 2)
+        image.anchor_y = int(image.height / 2)
         for i, column in enumerate(map_points):
             for j, (x, y) in enumerate(column):
-                image = load_sprite_asset("grass")
-                image.anchor_x = image.width / 2
-                image.anchor_y = image.height / 2
                 sprite = PixelAwareSprite(image, x, y,
                             batch=self.map_batch, centery=True)
                 sprite.scale = 1
@@ -497,7 +497,7 @@ class GameScene(Scene):
         knight_west = load_sprite_asset("knight/look_west")
         knight_walk_west  = load_sprite_animation("knight", "walk_west", 8, 0.15)
         knight_walk_north = load_sprite_animation("knight", "walk_north", 8, 0.15)
-        #knight_walk_west = knight_walk_north = pyglet.image.load_animation("assets/knight/walk_west.gif")
+        #knight_walk_west = knight_walk_north = pyglet.image.load_animation("knight/walk_west.gif")
 #        knight_walk_west.anchor_x = knight_walk_west.width / 2
 
         knight_x, knight_y = self.map.get_coordinates(5, 5)

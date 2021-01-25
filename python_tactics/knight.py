@@ -11,13 +11,13 @@ class Knight(Character):
     defense  = 10
     magic    = 0
 
-    profile  = Image("assets/knight/face.png")
-    attack_sound = sound_clip("assets/sound/50557__broumbroum__sf3_sfx_menu_back.wav")
+    profile  = Image("knight/face.png")
+    attack_sound = sound_clip("50557__broumbroum__sf3_sfx_menu_back.wav")
 
     class Sprite(Character.Sprite):
 
-        north_east_face = Image("assets/knight/look_north.png")
-        south_west_face = Image("assets/knight/look_west.png")
+        north_east_face = Image("knight/look_north.png")
+        south_west_face = Image("knight/look_west.png")
 
         faces = {
             Direction.NORTH : north_east_face,
@@ -27,9 +27,9 @@ class Knight(Character):
             }
 
         north_east_walk = Animation([
-            Frame(Image("assets/knight/walk_north1.png"), duration=0.1),
-            Frame(Image("assets/knight/walk_north2.png"), duration=0.1),
-            Frame(Image("assets/knight/walk_north3.png"), duration=0.1),
+            Frame(Image("knight/walk_north1.png"), duration=0.1),
+            Frame(Image("knight/walk_north2.png"), duration=0.1),
+            Frame(Image("knight/walk_north3.png"), duration=0.1),
             ], 0.0)
 
         walking_animations = {
@@ -46,13 +46,13 @@ class Mage(Character):
     defense  = 5
     magic    = 5
 
-    profile  = Image("assets/mage/face.png")
-    attack_sound = sound_clip("assets/sound/50561__broumbroum__sf3_sfx_menu_select.wav")
+    profile  = Image("mage/face.png")
+    attack_sound = sound_clip("50561__broumbroum__sf3_sfx_menu_select.wav")
 
     class Sprite(Character.Sprite):
 
-        north_east_face = Image("assets/mage/look_north.png")
-        south_west_face = Image("assets/mage/look_west.png")
+        north_east_face = Image("mage/look_north.png")
+        south_west_face = Image("mage/look_west.png")
 
         faces = {
             Direction.NORTH : north_east_face,
@@ -62,9 +62,9 @@ class Mage(Character):
             }
 
         north_east_walk = Animation([
-            Frame(Image("assets/mage/walk_north1.png"), duration=0.1),
-            Frame(Image("assets/mage/walk_north2.png"), duration=0.1),
-            Frame(Image("assets/mage/walk_north3.png"), duration=0.1),
+            Frame(Image("mage/walk_north1.png"), duration=0.1),
+            Frame(Image("mage/walk_north2.png"), duration=0.1),
+            Frame(Image("mage/walk_north3.png"), duration=0.1),
             ], 0.0)
 
         walking_animations = {
@@ -78,4 +78,4 @@ class Grass(Environment):
     occupiable = True
 
     class Sprite(Environment.Sprite):
-        face = Image("assets/grass.png")
+        face = Image("grass.png")

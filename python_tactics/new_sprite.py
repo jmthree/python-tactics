@@ -25,12 +25,16 @@
 #   * @y - The y coordinate of the element
 #   * @image - The current image the element should show
 
+import os
 from collections import namedtuple
 from enum import Enum
 from functools import reduce
 
-from pyglet import image, media
+import pkg_resources
+from pyglet import image, media, resource
 from pyglet.sprite import Sprite
+
+from python_tactics.util import asset_to_file
 
 
 class Direction(Enum):
@@ -39,13 +43,13 @@ class Direction(Enum):
     SOUTH = 2
     WEST = 3
 
-def sound_clip(file):
-    return media.load(file, streaming=False)
+def sound_clip(sound_asset):
+    return media.load(asset_to_file(os.path.join("sounds", sound_asset)), streaming=False)
 
 class Image:
 
-    def __init__(self, image_file):
-        self._image = image.load(image_file)
+    def __init__(self, image_asset):
+        self._image = image.load(asset_to_file(os.path.join("images", image_asset)))
         self._image.anchor_x = int(self._image.width / 2)
         self._image.anchor_y = int(self._image.height)
 

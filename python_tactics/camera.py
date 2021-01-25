@@ -3,7 +3,7 @@ Camera tracks a position, orientation and zoom level, and applies openGL
 transforms so that subsequent renders are drawn at the correct place, size
 and orientation on screen
 
-Based on code from: http://tartley.com/files/stretching_pyglets_wings/
+Based on code from: https://www.tartley.com/posts/stretching-pyglets-wings/
 """
 
 from math import sin, cos, pi

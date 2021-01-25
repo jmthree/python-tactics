@@ -11,10 +11,10 @@ from pyglet.window import Window
 from python_tactics.camera import PEPPY, Camera
 from python_tactics.scenes import MainMenuScene, World
 
-glEnable(GL_BLEND)
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
 def start():
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     # Create the main window
     window = Window(800, 600, visible=False,
                     caption="FF:Tactics.py", style='dialog')

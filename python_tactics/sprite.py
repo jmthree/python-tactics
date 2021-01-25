@@ -2,8 +2,8 @@ from pyglet.sprite import Sprite
 
 class PixelAwareSprite(Sprite):
     def __init__(self, image, x, y, batch=None, centery=False):
-        self.centery = centery
         super().__init__(image, x, y, batch=batch)
+        self.centery = centery
 
     @property
     def half_width(self):

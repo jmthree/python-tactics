@@ -1,20 +1,29 @@
 """
     Helper functions for loading files into pyglet for this project
 """
+import os
 from math import atan2, pi
 
-from pyglet import resource
+import pkg_resources
+import pyglet
 from pyglet.image import Animation, AnimationFrame
+
+
+def asset_to_file(asset_name):
+    return pkg_resources.resource_filename(
+        __name__,
+        os.path.join("assets", asset_name)
+    )
 
 def load_sprite_asset(name):
     " Loads png files from the assets folder, with anchor in middle "
-    image = resource.image("assets/%s.png" % name)
-    image.anchor_x = image.width / 2
+    image = pyglet.image.load(asset_to_file("images/%s.png" % name))
+    image.anchor_x = int(image.width / 2)
     return image
 
 def load_sprite_animation(name, action, frames=8, duration=0.1):
     " Creates an animation from files in the assets folder "
-    images = [resource.image("assets/%s/%s%d.png" % (name, action, i))
+    images = [pyglet.image.load(asset_to_file("images/%s/%s%d.png") % (name, action, i))
                 for i in range(1, frames + 1)]
     for image in images:
         image.anchor_x = image.width / 2
