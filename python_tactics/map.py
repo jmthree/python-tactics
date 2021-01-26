@@ -1,3 +1,5 @@
+from python_tactics.new_sprite import Direction
+
 class Map:
 
     def __init__(self, width, height):
@@ -18,6 +20,15 @@ class Map:
     @property
     def coordinates(self):
         return self._coordinates
+
+    def get_starting_positions(self, team_size):
+        """Returns starting positions on this map for a team of size `team_size`.
+           Result is pairs of coordinates and a direction, which is the direction towards the center"""
+        starting_x = int((self._width - team_size) / 2)
+        starting_y = int((self._height - team_size) / 2)
+        return [[(x_side, starting_y + y_offset, direction) for y_offset in range(team_size)] for x_side, direction in ((0, Direction.SOUTH), (self._width - 1, Direction.NORTH))] \
+             + [[(starting_x + x_offset, y_side, direction) for x_offset in range(team_size)] for y_side, direction in ((0, Direction.WEST), (self._height - 1, Direction.EAST))]
+
 
     def add_sprite(self, i, j, sprite):
         " Add the given sprite to the map at ith column and jth row "

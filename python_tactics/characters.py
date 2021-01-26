@@ -8,7 +8,7 @@ def anchor(img):
     img.anchor_y = 25
     return img
 
-class Knight(Character):
+class Beefy(Character):
 
     health   = 20
     speed    = 3
@@ -43,7 +43,7 @@ class Knight(Character):
             Direction.EAST  : north_east_walk.flipped_about_x,
             }
 
-class Mage(Character):
+class Ranged(Character):
     # unicorn_atlas
     # 13, 45 SE
     # 14, 46 SW

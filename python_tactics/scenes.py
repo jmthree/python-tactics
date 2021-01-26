@@ -9,7 +9,7 @@ from pyglet.sprite import Sprite
 from pyglet.text import Label
 from pyglet.window import key
 
-from python_tactics.knight import Knight, Mage
+from python_tactics.characters import Beefy, Ranged
 from python_tactics.map import Map
 from python_tactics.new_sprite import Direction
 from python_tactics.sprite import PixelAwareSprite
@@ -206,6 +206,10 @@ class MainMenuScene(Scene):
 #pylint: disable=too-many-instance-attributes
 class GameScene(Scene):
 
+    # Team constants
+    TEAM_SIZE = 2
+    TEAM_COUNT = 2
+
     # Game map constants
     MAP_START_X, MAP_START_Y = 400, 570
     GRID_WIDTH, GRID_HEIGHT = 100, 50
@@ -221,10 +225,6 @@ class GameScene(Scene):
         self.map        = self._generate_map()
         self.players    = self._initialize_teams()
         self.current_turn = 1
-        #import knight
-        #knight_x, knight_y = self.map.get_coordinates(5, 5)
-        #self.characters  = [knight.Knight.Sprite(knight_x, knight_y, 2, 0, 0.0)]
-        #self.selected   = None
         self.selected   = 0, 0
         self.selected_character = None
         self.mode = GameScene.SELECT_MODE
@@ -294,7 +294,7 @@ class GameScene(Scene):
 
     def change_player(self):
         old_turn = self.current_turn
-        self.current_turn = (self.current_turn + 1) % 2
+        self.current_turn = (self.current_turn + 1) % GameScene.TEAM_COUNT
         if not self.players[self.current_turn]:
             self.world.transition(VictoryScene, winner=old_turn + 1)
         else:
@@ -325,18 +325,19 @@ class GameScene(Scene):
         self.camera.look_at((newx + self.camera.x) / 2, (newy + self.camera.y) / 2)
 
     def _initialize_teams(self):
-        def load_knight(hue):
-            knight_x, knight_y = self.map.get_coordinates(9 * hue, 4)
-            direction = Direction.NORTH if hue else Direction.SOUTH
-            knight = Knight(knight_x, knight_y, direction)
-            knight.zindex=10
-            knight.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 0
-            mage_x, mage_y = self.map.get_coordinates(9 * hue, 5)
-            mage = Mage(mage_x, mage_y, direction)
-            mage.zindex=10
-            mage.color = 255 - (150 * hue), 255 - (150 * ((hue + 1) % 2)), 255
-            return [knight, mage]
-        return [load_knight(i) for i in range(2)]
+        def create_team(team_number, positions):
+            team = []
+            for character_count, (i, j, direction) in enumerate(positions):
+                cls = Beefy if character_count % 2 == 0 else Ranged
+                char_x, char_y = self.map.get_coordinates(i, j)
+                character = cls(char_x, char_y, direction)
+                character.zindex = 10
+                character.color = 255 - (200 * team_number), 110, 255 - (200 * ((team_number + 1) % GameScene.TEAM_COUNT))
+                team.append(character)
+            return team
+        return [create_team(team_number, positions)
+                for team_number, positions
+                in enumerate(self.map.get_starting_positions(GameScene.TEAM_SIZE)[0:GameScene.TEAM_COUNT])]
 
     def move_hilight(self, x, y):
         current_x, current_y = self.selected
