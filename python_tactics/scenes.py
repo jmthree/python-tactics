@@ -256,6 +256,7 @@ class GameScene(Scene):
                 (key.RIGHT, 0)  : lambda: self.move_hilight(1, 0),
                 (key.UP, 0)     : lambda: self.move_hilight(0, -1),
                 (key.DOWN, 0)   : lambda: self.move_hilight(0, 1),
+                (key.TAB, 0)    : self.highlight_next_character_on_current_team,
                 (key.ENTER, 0)  : self._open_action_menu,
                 },
             GameScene.ACTION_MODE : {
@@ -297,17 +298,31 @@ class GameScene(Scene):
         if not self.players[self.current_turn]:
             self.world.transition(VictoryScene, winner=old_turn + 1)
         else:
-            self.display_turn_notice(self.current_turn)
+            self.display_turn_notice()
+            self.highlight_next_character_on_current_team()
 
-    def display_turn_notice(self, current_turn):
+    def display_turn_notice(self):
         if self.turn_notice is not None:
             self.turn_notice.delete()
         self.turn_notice = Label(
-                "Player %s's Turn" % (current_turn + 1),
+                "Player %s's Turn" % (self.current_turn + 1),
                 font_name='Times New Roman', font_size=36,
                 x=self.camera.to_x_from_left(10),
                 y=self.camera.to_y_from_bottom(10))
-        self.turn_notice.color = 255 - (100 * current_turn), 255 - (100 * ((current_turn + 1) % 2)), 255, 255
+        self.turn_notice.color = 255 - (100 * self.current_turn), 255 - (100 * ((self.current_turn + 1) % 2)), 255, 255
+
+    def highlight_next_character_on_current_team(self):
+        current_team_positions = [self.map.get_row_column(c.x, c.y) for c in self.players[self.current_turn]]
+        if self.selected in current_team_positions:
+            if len(current_team_positions) == 1:
+                return
+            currently_highlighted = current_team_positions.index(self.selected)
+            highlighted_position = current_team_positions[(currently_highlighted + 1) % len(current_team_positions)]
+        else:
+            highlighted_position = current_team_positions[0]
+        self.selected = highlighted_position
+        newx, newy = self.map.get_coordinates(*self.selected)
+        self.camera.look_at((newx + self.camera.x) / 2, (newy + self.camera.y) / 2)
 
     def _initialize_teams(self):
         def load_knight(hue):
