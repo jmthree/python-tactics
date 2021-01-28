@@ -11,7 +11,6 @@ from pyglet.window import key
 
 from python_tactics.characters import Beefy, Ranged
 from python_tactics.map import Map
-from python_tactics.new_sprite import Direction
 from python_tactics.sprite import PixelAwareSprite
 from python_tactics.util import (find_path, load_sprite_asset)
 
@@ -373,13 +372,16 @@ class GameScene(Scene):
             self.turn_notice.x = self.camera.to_x_from_left(10)
             self.turn_notice.y = self.camera.to_y_from_bottom(10)
             self.turn_notice.draw()
-        for character in sorted(self._all_characters(), key=lambda c: -int(c.y)):
+        characters_in_y_order = sorted(self._all_characters(), key=lambda c: -int(c.y))
+        for character in characters_in_y_order:
 #            if (selected_x, selected_y) == (character.x, character.y):
 #                character.color = 100, 100, 100
 #            else:
 #                character.color = 255, 255, 255
-            character.draw()
+            character.draw_character()
 #            #character.image.blit(character.x, character.y)
+        for character in characters_in_y_order:
+            character.draw_ui()
         if self.mode == GameScene.ACTION_MODE:
             self._draw_action_menu()
             self.text_batch.draw()
@@ -501,8 +503,8 @@ class GameScene(Scene):
             hit = max(1, defense - attack)
             print("Hit for ", hit)
             attacker.attack_sound.play()
-            attacked.current_health = attacked.current_health - hit
-            if attacked.current_health <= 0:
+            remaining_health = attacked.hit(hit)
+            if remaining_health == 0:
                 self._other_characters().remove(attacked)
                 attacked.delete()
             self.attack_hilight = []

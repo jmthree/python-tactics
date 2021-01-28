@@ -30,8 +30,9 @@ from collections import namedtuple
 from enum import Enum
 from functools import reduce
 
-from pyglet import image, media
+from pyglet import graphics, image, media
 from pyglet.sprite import Sprite
+from pyglet.text import Label
 
 from python_tactics.util import asset_to_file
 
@@ -100,21 +101,71 @@ class Animation(namedtuple("Animation", "frames amount_played")):
 
 SpriteBase = namedtuple("SpriteBase", "x y")
 
-class Character:
-
-    def __init__(self, x, y, facing=Direction.NORTH):
-        self.sprite = Sprite(self.Sprite.faces[facing], x, y)
-        self.facing = facing
-        self.movement_queue = []
-        self.movement_ticks = 0
-        self.last_stop = (self.x, self.y)
-
-        self.current_health = self.health
+class Health:
+    def __init__(self, current_health, max_health, x, y, y_offset):
+        self.current_health = current_health
+        self.max_health = max_health
+        self.y_offset = y_offset
+        self.sprite = self._create_sprite(x, y)
 
     def draw(self):
         self.sprite.draw()
 
+    @property
+    def x(self):
+        return self.sprite.x
+
+    @property
+    def y(self):
+        return self.sprite.y
+
+    @x.setter
+    def x(self, x):
+        self.sprite.x = x
+
+    @y.setter
+    def y(self, y):
+        self.sprite.y = y + (self.y_offset - 20)
+
+    def hit(self, attack):
+        self.current_health = max(0, self.current_health - attack)
+        self.sprite.text = self._create_label_text()
+        return self.current_health
+
     def delete(self):
+        self.sprite.delete()
+
+    def _create_sprite(self, x, y):
+        return Label(text=self._create_label_text(),
+                     font_name='Times New Roman',
+                     font_size=18,
+                     bold=True,
+                     x=x,
+                     y=y + (self.y_offset - 20),
+                     anchor_x='center')
+
+    def _create_label_text(self):
+        return f"{self.current_health}/{self.max_health}"
+
+
+class Character:
+
+    def __init__(self, x, y, facing=Direction.NORTH):
+        self.facing = facing
+        self.movement_queue = []
+        self.movement_ticks = 0
+        self.sprite = Sprite(self.Sprite.faces[facing], x, y)
+        self.health = Health(self.health, self.health, x, y, self.sprite.height)
+        self.last_stop = (self.x, self.y)
+
+    def draw_character(self):
+        self.sprite.draw()
+
+    def draw_ui(self):
+        self.health.draw()
+
+    def delete(self):
+        self.health.delete()
         self.sprite.delete()
 
     @property
@@ -124,6 +175,7 @@ class Character:
     @x.setter
     def x(self, x):
         self.sprite.x = x
+        self.health.x = x
 
     @property
     def y(self):
@@ -132,6 +184,7 @@ class Character:
     @y.setter
     def y(self, y):
         self.sprite.y = y
+        self.health.y = y
 
     @property
     def color(self):
@@ -171,6 +224,9 @@ class Character:
                 self.last_stop = (self.x, self.y)
         else:
             self.look(self.facing)
+
+    def hit(self, attack):
+        return self.health.hit(attack)
 
 
     class Sprite(namedtuple("CharacterSprite", "x y facing moving_to internal_clock")):
