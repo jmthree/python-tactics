@@ -82,11 +82,3 @@ class Ranged(Character):
             Direction.NORTH : north_east_walk,
             Direction.EAST  : north_east_walk.flipped_about_x,
             }
-
-class Grass(Environment):
-
-    height = 0
-    occupiable = True
-
-    class Sprite(Environment.Sprite):
-        face = Image("grass.png")

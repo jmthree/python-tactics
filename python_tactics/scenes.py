@@ -10,9 +10,8 @@ from pyglet.text import Label
 from pyglet.window import key
 
 from python_tactics.characters import Beefy, Ranged
-from python_tactics.map import Map
-from python_tactics.sprite import PixelAwareSprite
-from python_tactics.util import (find_path, load_sprite_asset)
+from python_tactics.map import RectangularMap
+from python_tactics.util import load_sprite_asset
 
 
 class World:
@@ -211,17 +210,14 @@ class GameScene(Scene):
 
     # Game map constants
     MAP_START_X, MAP_START_Y = 400, 570
-    GRID_WIDTH, GRID_HEIGHT = 100, 50
-    MAP_WIDTH = MAP_HEIGHT = 10
+    MAP_WIDTH = MAP_DEPTH = 10
 
     # The modes the game scene can be in
     NOTIFY, SELECT_MODE, ACTION_MODE, MOVE_TARGET_MODE, ATTACK_TARGET_MODE = list(range(5))
 
     def __init__(self, world):
         super().__init__(world)
-
-        self.map_batch  = Batch()
-        self.map        = self._generate_map()
+        self.map        = RectangularMap(GameScene.MAP_WIDTH, GameScene.MAP_DEPTH, GameScene.MAP_START_X, GameScene.MAP_START_Y)
         self.players    = self._initialize_teams()
         self.current_turn = 1
         self.selected   = 0, 0
@@ -243,10 +239,6 @@ class GameScene(Scene):
                 "Attack"            : self._initiate_attack,
                 "Cancel"            : self._close_action_menu,
         }
-
-        # Sprites which need hilighting from different modes
-        self.movement_hilight = []
-        self.attack_hilight = []
 
         self.key_handlers = {
             GameScene.SELECT_MODE : {
@@ -282,6 +274,8 @@ class GameScene(Scene):
                 },
         }
         self.change_player()
+        self.map.highlight(*self.selected)
+        self.camera.focus(self.window.width, self.window.height)
 
     def _all_characters(self):
         return reduce(lambda chars, player: player + chars, self.players)
@@ -320,7 +314,8 @@ class GameScene(Scene):
         else:
             highlighted_position = current_team_positions[0]
         self.selected = highlighted_position
-        newx, newy = self.map.get_coordinates(*self.selected)
+        self.map.highlight(*self.selected)
+        newx, newy = self.map.get_xy(*self.selected)
         self.camera.look_at((newx + self.camera.x) / 2, (newy + self.camera.y) / 2)
 
     def _initialize_teams(self):
@@ -328,7 +323,7 @@ class GameScene(Scene):
             team = []
             for character_count, (i, j, direction) in enumerate(positions):
                 cls = Beefy if character_count % 2 == 0 else Ranged
-                char_x, char_y = self.map.get_coordinates(i, j)
+                char_x, char_y = self.map.get_xy(i, j)
                 character = cls(char_x, char_y, direction)
                 character.zindex = 10
                 character.color = 255 - (200 * team_number), 110, 255 - (200 * ((team_number + 1) % GameScene.TEAM_COUNT))
@@ -338,11 +333,12 @@ class GameScene(Scene):
                 for team_number, positions
                 in enumerate(self.map.get_starting_positions(GameScene.TEAM_SIZE)[0:GameScene.TEAM_COUNT])]
 
-    def move_hilight(self, x, y):
-        current_x, current_y = self.selected
-        self.selected = max(0, min(x + current_x, GameScene.MAP_WIDTH - 1)),\
-                        max(0, min(y + current_y, GameScene.MAP_HEIGHT - 1))
-        newx, newy = self.map.get_coordinates(*self.selected)
+    def move_hilight(self, delta_i, delta_j):
+        current_i, current_j = self.selected
+        highlight_at = self.map.highlight(current_i + delta_i, current_j + delta_j)
+        if highlight_at:
+            self.selected = highlight_at
+        newx, newy = self.map.get_xy(*self.selected)
         self.camera.look_at((newx + self.camera.x) / 2, (newy + self.camera.y) / 2)
 
     def enter(self):
@@ -355,19 +351,7 @@ class GameScene(Scene):
 
     def on_draw(self):
         self.window.clear()
-        selected_x, selected_y = self.map.get_coordinates(*self.selected)
-#        if  selected_x <= 100 or selected_x >= 500 \
-#                or selected_y <= 100 or selected_y >= 700:
-        for sprite in self.map.sprites:
-            if (selected_x, selected_y) == (sprite.x, sprite.y):
-                sprite.color = 100, 100, 100
-            elif sprite in self.movement_hilight:
-                sprite.color = 100, 100, 255
-            elif sprite in self.attack_hilight:
-                sprite.color = 255, 100, 100
-            else:
-                sprite.color = 255, 255, 255
-        self.map_batch.draw()
+        self.map.draw()
         if hasattr(self, 'turn_notice'):
             self.turn_notice.x = self.camera.to_x_from_left(10)
             self.turn_notice.y = self.camera.to_y_from_bottom(10)
@@ -458,41 +442,29 @@ class GameScene(Scene):
 
     def _initiate_movement(self):
         self.mode = GameScene.MOVE_TARGET_MODE
-        self.movement_hilight = []
         character = self.selected_character
         taken  = [self.map.get_row_column(c.x, c.y) for c in self._all_characters()]
         column, row = self.map.get_row_column(character.x, character.y)
-        in_range = self._points_in_range(column, row, character.speed)
-        for column, row in in_range:
-            if (column, row) not in taken:
-                self.movement_hilight.append(self.map.get_sprite(column, row))
+        self.map.radius_highlight(column, row, character.speed, taken)
 
     def _execute_move(self):
-        taken  = [self.map.get_row_column(c.x, c.y) for c in self._all_characters()]
-        if self.selected not in taken:
-            sprite = self.map.get_sprite(*self.selected)
-            if sprite in self.movement_hilight:
-                last = self.map.get_coordinates(*self.selected)
-                self._schedule_movement(self.selected_character, last)
-                self.movement_hilight = []
-                self.change_player()
-                self._close_action_menu()
+        if self.map.is_highlighted(*self.selected):
+            last = self.map.get_xy(*self.selected)
+            self._schedule_movement(self.selected_character, last)
+            self.map.reset_radius_highlight()
+            self.change_player()
+            self._close_action_menu()
 
     def _initiate_attack(self):
         self.mode = GameScene.ATTACK_TARGET_MODE
-        self.attack_hilight = []
         character = self.selected_character
         column, row = self.map.get_row_column(character.x, character.y)
-        in_range = self._points_in_range(column, row, character.range)
-        in_range.remove(self.selected)
-        for column, row in in_range:
-            self.attack_hilight.append(self.map.get_sprite(column, row))
+        self.map.radius_highlight(column, row, character.range, [self.selected])
 
     def _execute_attack(self):
-        sprite = self.map.get_sprite(*self.selected)
         attacker = self.selected_character
         attacked = None
-        if sprite in self.attack_hilight:
+        if self.map.is_highlighted(*self.selected):
             for character in self._other_characters():
                 char_loc = self.map.get_row_column(character.x, character.y)
                 if  char_loc == self.selected:
@@ -507,7 +479,7 @@ class GameScene(Scene):
             if remaining_health == 0:
                 self._other_characters().remove(attacked)
                 attacked.delete()
-            self.attack_hilight = []
+            self.map.reset_radius_highlight()
             self.change_player()
             self._close_action_menu()
 
@@ -516,51 +488,9 @@ class GameScene(Scene):
         handler = self.key_handlers[self.mode].get(pressed, lambda: None)
         handler()
 
-    def _generate_map(self):
-        x, y = GameScene.MAP_START_X, GameScene.MAP_START_Y
-        x_offset, y_offset = self.GRID_WIDTH / 2, self.GRID_HEIGHT / 2
-        columns, rows = GameScene.MAP_WIDTH, GameScene.MAP_HEIGHT
-
-        column_starts = [(x + i * x_offset, y - i * y_offset)
-                            for i in range(columns)]
-        map_points    = [[(x - i * x_offset, y - i * y_offset)
-                            for i in range(rows)]
-                            for x, y in column_starts]
-
-        gamemap = Map(columns, rows)
-        image = load_sprite_asset("grass")
-        image.anchor_x = int(image.width / 2)
-        image.anchor_y = int(image.height / 2)
-        for i, column in enumerate(map_points):
-            for j, (x, y) in enumerate(column):
-                sprite = PixelAwareSprite(image, x, y,
-                            batch=self.map_batch, centery=True)
-                sprite.scale = 1
-                sprite.zindex = 0
-                gamemap.add_sprite(i, j, sprite)
-                # Uncomment to display grid numbers
-                # very useful to understand space
-                # Label(f"{i}, {j}",
-                #       font_name='Times New Roman',
-                #       font_size=12,
-                #       x=x,
-                #       y=y,
-                #       batch=self.map_batch)
-        return gamemap
-
-    def _points_in_range(self, column, row, length):
-        if not 0 <= column < self.MAP_HEIGHT:
-            return []
-        if length == 0:
-            return [(column, row)]
-        return self._points_in_range(column - 1, row, length - 1) +\
-                [(column, min(max(0, row - length + i), self.MAP_WIDTH - 1))
-                    for i in range(2 * length + 1)] + \
-                self._points_in_range(column + 1, row, length - 1)
-
     def _schedule_movement(self, sprite, pos):
         end_x, end_y = pos
-        path = find_path(self.map.coordinates, sprite.x, sprite.y, end_x, end_y)
+        path = self.map.find_path(sprite.x, sprite.y, end_x, end_y)
         for x, y in path:
             sprite.move_to(x, y, 0.3)
 
@@ -574,19 +504,19 @@ class GameScene(Scene):
 
     def _open_action_menu(self):
         if not self.selected_character:
-            selected_x, selected_y = self.map.get_coordinates(*self.selected)
+            selected_x, selected_y = self.map.get_xy(*self.selected)
             for character in self.players[self.current_turn]:
                 if (character.x, character.y) == (selected_x, selected_y):
                     self.selected_character = character
         if self.selected_character:
-            self.movement_hilight = []
-            self.attack_hilight = []
+            self.map.reset_radius_highlight()
             self.camera.stop()
             self.cursor_pos = 0
             self.cursor.x = self.camera.to_x_from_left(10)
             self.cursor.y = self.camera.to_y_from_bottom(150)
             self.mode = GameScene.ACTION_MODE
             self.selected = self.map.get_row_column(self.selected_character.x, self.selected_character.y)
+            self.map.highlight(*self.selected)
 
     def game_menu(self):
         self.camera.stop()
