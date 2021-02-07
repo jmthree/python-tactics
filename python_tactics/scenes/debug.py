@@ -1,4 +1,5 @@
 import pyglet
+from pyglet.image import ImageGrid
 from pyglet.sprite import Sprite
 from pyglet.text import Label
 from pyglet.window import key
@@ -8,12 +9,17 @@ from python_tactics.util import load_sprite_asset
 
 class AtlasBrowsingScene(Scene):
 
+    blocks = ImageGrid(load_sprite_asset("blocks"), 1, 101)
+    unicorns = ImageGrid(load_sprite_asset("unicorn_atlas"), 12, 24)
+    spaghettis = ImageGrid(load_sprite_asset("spaghetti_atlas"), 12, 24)
+
     def __init__(self, world):
         super().__init__(world)
-        self.dude_frame = 0
-        self.dude_sheet = self._load_dude_sheet()
-        self.dude = self._load_dude()
-        self.frame_text = self._load_frame_text()
+        self.sheets = {"blocks": self.blocks, "unicorns": self.unicorns, "spagettis": self.spaghettis}
+        self.sheet = None
+        self.sheet_sprite = None
+        self.sheet_index = 0
+        self.text = Label("", font_name='Times New Roman', font_size=36, x=200, y=300)
 
     def enter(self):
         black = 0, 0, 0, 0
@@ -21,23 +27,37 @@ class AtlasBrowsingScene(Scene):
 
     def on_draw(self):
         self.world.window.clear()
-        self.dude.draw()
-
-
-    def _load_dude_sheet(self):
-        img = load_sprite_asset("unicorn_atlas")
-        sprite_grid = pyglet.image.ImageGrid(img, 12, 24)
-        return sprite_grid
-
-    def _load_dude(self):
-        return Sprite(self.dude_sheet[self.dude_frame])
-
-    def _load_frame_text(self):
-        return Label(f"{self.dude_frame}", font_name='Times New Roman', font_size=36, x=200, y=300)
+        if self.sheet_sprite:
+            self.sheet_sprite.draw()
+        self.text.draw()
 
     def on_key_press(self, button, _modifiers):
+        if button in (key.UP, key.DOWN):
+            self.change_sheet(1 if button == key.DOWN else -1)
         if button in (key.LEFT, key.RIGHT):
-            modifier = 1 if button == key.LEFT else -1
-            self.dude_frame = (self.dude_frame - modifier) % 288
-            self.dude = self._load_dude()
-            self.frame_text = self._load_frame_text()
+            self.cycle_sheet(-1 if button == key.LEFT else 1)
+
+    def get_sheet(self):
+        return list(self.sheets.values())[self.sheet]
+
+    def change_sheet(self, direction):
+        if self.sheet is None:
+            self.sheet = 0
+        else:
+            self.sheet = (self.sheet + direction) % len(self.sheets)
+        self.sheet_index = 0
+        self.update_sprite_and_text()
+
+    def cycle_sheet(self, direction):
+        if self.sheet is None:
+            return
+        self.sheet_index = (self.sheet_index + direction) % len(self.get_sheet())
+        self.update_sprite_and_text()
+
+    def update_sprite_and_text(self):
+        sheet_name = list(self.sheets.keys())[self.sheet]
+        old_sprite = self.sheet_sprite
+        self.sheet_sprite = Sprite(self.get_sheet()[self.sheet_index])
+        if old_sprite:
+            old_sprite.delete()
+        self.text.text = f"{sheet_name}: {self.sheet_index}"
