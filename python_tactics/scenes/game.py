@@ -8,197 +8,9 @@ from pyglet.image import SolidColorImagePattern
 from pyglet.sprite import Sprite
 from pyglet.text import Label
 from pyglet.window import key
-
 from python_tactics.characters import Beefy, Ranged
 from python_tactics.map import RectangularMap
-from python_tactics.util import load_sprite_asset
-
-
-class World:
-
-    def __init__(self, window, camera):
-        self.window = window
-        self.camera = camera
-        self.current = None
-
-    def transition(self, scenecls, *args, **kwargs):
-        if self.current:
-            self.current.unload(self.window)
-        scene = scenecls(self, *args, **kwargs)
-        self.current = scene
-        scene.load(self.window)
-
-    def reload(self, scene):
-        if self.current:
-            self.current.unload(self.window)
-        self.current = scene
-        scene.load(self.window)
-
-class Scene:
-
-    WINDOW_EVENTS = ["on_draw", "on_mouse_press", "on_mouse_release",
-                     "on_mouse_drag", "on_key_press"]
-
-    def __init__(self, world):
-        self.world = world
-
-    @property
-    def camera(self):
-        return self.world.camera
-
-    @property
-    def window(self):
-        return self.world.window
-
-    def enter(self):
-        pass
-
-    def exit(self):
-        pass
-
-    def load(self, window):
-        """ For each window event, if this Scene has a handler, attach that
-            handler to the window
-        """
-        # Loads our callbacks
-        for event in Scene.WINDOW_EVENTS:
-            if hasattr(self, event):
-                window.__setattr__(event, self.__getattribute__(event))
-
-        # Call enter to set up the scene if needed
-        self.enter()
-
-    def unload(self, window):
-        # Cleans out any old callbacks
-        for event in Scene.WINDOW_EVENTS:
-            window.__setattr__(event, lambda *args: False)
-
-        # Call exit to do whatever if needed
-        self.exit()
-
-    def __del__(self):
-        print(("Deleting %s" % self))
-
-
-class AtlasBrowsingScene(Scene):
-
-    def __init__(self, world):
-        super().__init__(world)
-        self.dude_frame = 0
-        self.dude_sheet = self._load_dude_sheet()
-        self.dude = self._load_dude()
-        self.frame_text = self._load_frame_text()
-
-    def enter(self):
-        black = 0, 0, 0, 0
-        pyglet.gl.glClearColor(*black)
-
-    def on_draw(self):
-        self.world.window.clear()
-        self.dude.draw()
-
-
-    def _load_dude_sheet(self):
-        img = load_sprite_asset("unicorn_atlas")
-        sprite_grid = pyglet.image.ImageGrid(img, 12, 24)
-        return sprite_grid
-
-    def _load_dude(self):
-        return Sprite(self.dude_sheet[self.dude_frame])
-
-    def _load_frame_text(self):
-        return Label(f"{self.dude_frame}", font_name='Times New Roman', font_size=36, x=200, y=300)
-
-    def on_key_press(self, button, _modifiers):
-        if button in (key.LEFT, key.RIGHT):
-            modifier = 1 if button == key.LEFT else -1
-            self.dude_frame = (self.dude_frame - modifier) % 288
-            self.dude = self._load_dude()
-            self.frame_text = self._load_frame_text()
-
-
-class MainMenuScene(Scene):
-
-    def __init__(self, world):
-        super().__init__(world)
-        self.text_batch = Batch()
-        self.cursor = Label(">", font_name='Times New Roman', font_size=36,
-                            x=self.camera.to_x_from_left(200),
-                            y=self.camera.to_y_from_bottom(300),
-                            batch=self.text_batch)
-        self.cursor_pos = 0
-        self.moogle = self._load_moogle()
-
-        self.menu_items = {
-            "Start Game"   : self._new_game,
-            "About"        : self._launch_about,
-            "Quit Program" : self.window.close
-        }
-        self._generate_text()
-
-        self.key_handlers = {
-            (key.ESCAPE, 0) : self.window.close,
-            (key.UP, 0)     : lambda: self._move_cursor(1),
-            (key.DOWN, 0)   : lambda: self._move_cursor(-1),
-            (key.ENTER, 0)  : self._menu_action
-        }
-
-    def enter(self):
-        black = 0, 0, 0, 0
-        pyglet.gl.glClearColor(*black)
-
-    def on_draw(self):
-        self.world.window.clear()
-        self.moogle.draw()
-        self.text_batch.draw()
-        self.camera.focus(self.window.width, self.window.height)
-
-    def on_key_press(self, button, modifiers):
-        pressed = (button, modifiers)
-        handler = self.key_handlers.get(pressed, lambda: None)
-        handler()
-
-    def _generate_text(self):
-        title_x, title_y = self.camera.to_xy_from_bottom_left(10, 520)
-        Label('FF:Tactics.py', font_name='Times New Roman', font_size=56,
-                x=title_x, y=title_y, batch=self.text_batch)
-
-        menu_texts = list(self.menu_items.keys())
-        for i, text in enumerate(menu_texts):
-            text_x, text_y = self.camera.to_xy_from_bottom_left(240, 300 - 40 * i)
-            Label(text, font_name='Times New Roman', font_size=36,
-                    x=text_x, y=text_y, batch=self.text_batch)
-
-        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
-        Label("Use Up and Down Arrows to navigate",
-                font_name='Times New Roman', font_size=18,
-                x=hint_x, y=hint_y, batch=self.text_batch)
-        Label("Use Enter to choose",
-                font_name='Times New Roman', font_size=18,
-                x=hint_x, y=hint_y - 20, batch=self.text_batch)
-
-    def _load_moogle(self):
-        moogle_image = load_sprite_asset("moogle")
-        moogle_image.anchor_x = int(moogle_image.width / 2)
-        moogle_image.anchor_y = int(moogle_image.height / 2)
-        moog_sprite = Sprite(moogle_image,
-                        self.camera.to_x_from_left(40),
-                        self.camera.to_y_from_bottom(40))
-        return moog_sprite
-
-    def _new_game(self):
-        self.world.transition(GameScene)
-
-    def _launch_about(self):
-        self.world.transition(AboutScene, previous=self)
-
-    def _menu_action(self):
-        actions = list(self.menu_items.values())
-        actions[self.cursor_pos]()
-
-    def _move_cursor(self, direction):
-        self.cursor_pos = (self.cursor_pos - direction) % len(self.menu_items)
-        self.cursor.y = self.camera.to_y_from_bottom(300 - 40 * self.cursor_pos)
+from python_tactics.scenes import Scene
 
 
 #pylint: disable=too-many-instance-attributes
@@ -591,7 +403,10 @@ class VictoryScene(Scene):
         self.cursor.y = 500 + self.camera.offset_y - 40 * self.cursor_pos
 
     def _main_menu(self):
+        #pylint: disable=import-outside-toplevel
+        from python_tactics.scenes.preamble import MainMenuScene
         self.world.transition(MainMenuScene)
+
 
 class InGameMenuScene(Scene):
 
@@ -673,40 +488,6 @@ class InGameMenuScene(Scene):
         pass
 
     def _quit_game(self):
+        #pylint: disable=import-outside-toplevel
+        from python_tactics.scenes.preamble import MainMenuScene
         self.world.transition(MainMenuScene)
-
-class AboutScene(Scene):
-
-    def __init__(self, world, previous):
-        super().__init__(world)
-        self.old_scene = previous
-        self.text_batch = Batch()
-        self._generate_text()
-
-        self.key_handlers = {
-            (key.ESCAPE, 0) : self._resume
-        }
-
-    def on_draw(self):
-        self.window.clear()
-        # Display the previous scene, then tint it
-        self.text_batch.draw()
-
-    def on_key_press(self, button, modifiers):
-        pressed = (button, modifiers)
-        handler = self.key_handlers.get(pressed, lambda: None)
-        handler()
-
-    def _resume(self):
-        self.world.reload(self.old_scene)
-
-    def _generate_text(self):
-        author_x, author_y = self.camera.to_xy_from_bottom_left(200, 500)
-        Label("Written by John Mendelewski",
-                font_name='Times New Roman', font_size=36,
-                x=author_x, y=author_y - 20, batch=self.text_batch)
-
-        hint_x, hint_y = self.camera.to_xy_from_bottom_left(400, 30)
-        Label("Use Escape to return to the menu",
-                font_name='Times New Roman', font_size=18,
-                x=hint_x, y=hint_y - 20, batch=self.text_batch)

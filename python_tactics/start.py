@@ -9,7 +9,9 @@ from pyglet.gl import (GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA,
 from pyglet.window import Window
 
 from python_tactics.camera import PEPPY, Camera
-from python_tactics.scenes import MainMenuScene, World
+from python_tactics.scenes import World
+from python_tactics.scenes.preamble import MainMenuScene
+
 
 def start():
     glEnable(GL_BLEND)
