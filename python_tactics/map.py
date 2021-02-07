@@ -1,9 +1,13 @@
 import pyglet
+from pyglet.gl import (GL_NEAREST, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                       GL_TEXTURE_MIN_FILTER,
+                       glTexParameteri)
 from pyglet.graphics import Batch
+
 from python_tactics.new_sprite import Direction
-from python_tactics.util import load_sprite_asset
 from python_tactics.sprite import PixelAwareSprite
-from python_tactics.util import find_path
+from python_tactics.util import find_path, load_sprite_asset
+
 
 class RectangularMap:
     NORMAL_COLOR = 255, 255, 255
@@ -60,6 +64,8 @@ class RectangularMap:
 
     def draw(self):
         self._sprite_batch.draw()
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
     def highlight(self, i, j):
         if i < 0  or i >= self._width or j < 0 or j >= self._depth:
