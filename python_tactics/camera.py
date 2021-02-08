@@ -15,6 +15,7 @@ from pyglet.gl import (
 
 NORMAL, PEPPY, FAST = 1, 2, 3
 LEFT, RIGHT, UP, DOWN = -pi/2, pi/2, 0, pi
+TARGET_THRESHOLD = 5
 
 class Camera:
     """ Manipulates the OpenGL projection matrix to emulate a moving
@@ -68,12 +69,15 @@ class Camera:
 
     def tick(self, delta_t):
         " Changes position of camera based on change in time "
-        new_x     = self.target_x - self.x
-        new_y     = self.target_y - self.y
-        new_scale = self.target_scale - self.scale
-        self.x     += new_x * delta_t * self.speed
-        self.y     += new_y * delta_t * self.speed
-        self.scale += new_scale * delta_t * self.speed
+        self.x = self._tick_towards_target(self.target_x, self.x, delta_t)
+        self.y = self._tick_towards_target(self.target_y, self.y, delta_t)
+        self.scale = self._tick_towards_target(self.target_scale, self.scale, delta_t)
+
+    def _tick_towards_target(self, target, current, delta_t):
+        diff = target - current
+        if -TARGET_THRESHOLD <= diff <= TARGET_THRESHOLD:
+            return target
+        return current + int(diff * delta_t * self.speed)
 
     def focus(self, width, height):
         "Set projection and model view matrices ready for rendering"
@@ -81,11 +85,8 @@ class Camera:
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         aspect = width / height
-        gluOrtho2D(
-            -self.scale * aspect,
-            +self.scale * aspect,
-            -self.scale,
-            +self.scale)
+        left, right, bottom, top = -self.scale * aspect, +self.scale * aspect, -self.scale, +self.scale
+        gluOrtho2D(left, right, bottom, top)
 
         # Set model view matrix to move, scale & rotate to camera position"
         glMatrixMode(GL_MODELVIEW)
@@ -108,7 +109,7 @@ class Camera:
 
     def look_at(self, x, y):
         " Sets up camera to focus on target x and y "
-        self.target_x, self.target_y = x, y
+        self.target_x, self.target_y = int(x), int(y)
 
     def to_y_from_bottom(self, y):
         "Returns a y that is y pixels above the bottom the window"
